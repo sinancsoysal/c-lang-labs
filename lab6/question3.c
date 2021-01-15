@@ -3,7 +3,9 @@
 #include <pthread.h>
 #include <string.h>
 
-#define MAX_THREADS 20
+#define MAX_THREADS 25
+
+int *args;
 
 int isDivisible(int num, int divider) {
 	if(num % divider == 0) return 1;
@@ -19,13 +21,13 @@ void writeToFile(int *ints, char *filename) {
 }
 
 void* compute_d(void* params) {
-	int *args = (int *) params;
+	int  thread_idx = *((int*) params);
 	int *d_count = (int*)malloc(sizeof(int));
 	*d_count = 0;
 
 	// filename = "numbers<thread_id>.txt"
 	char filename[50];
-	sprintf(filename, "numbers%d.txt", (int)pthread_self() % 100);
+	sprintf(filename, "numbers%d.txt", thread_idx);
 
 	FILE *file = fopen(filename, "w");
 
@@ -43,7 +45,7 @@ int main(int argc, char *argv[]) {
 	// handling passed arguments
 	if(argc != 6) { printf("Unexpected numbers arguments.\nTerminating..\n"); exit(1); }
 
-	int args[argc-1];
+	args = (int*) malloc((argc - 1) * sizeof(int));
 
 	for(int i = 1; i < argc; i++) args[i-1] = atoi(argv[i]);
 
@@ -58,11 +60,12 @@ int main(int argc, char *argv[]) {
 
 	// setting up and starting threads
 	pthread_t thread_ids[MAX_THREADS];
+	int thread_idx[MAX_THREADS];
 	int *results[MAX_THREADS];
 
 	for(int i = 0; i < MAX_THREADS; i++) {
-//		args[0] = i; beceremedik
-		pthread_create(&thread_ids[i], NULL, compute_d, &args);
+		thread_idx[i] = i;
+		pthread_create(&thread_ids[i], NULL, compute_d, &thread_idx[i]);
 	}
 
 	// joining threads
