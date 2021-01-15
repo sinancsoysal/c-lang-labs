@@ -11,10 +11,10 @@ int main( void ) {
 	int status;
 
 	FILE* file;
-	char str[MAXCHAR];	
+	char str[MAXCHAR];
 	char* filename = "data.txt";
 	file = fopen(filename, "r");
-	
+
 	if(file == NULL) {
 		printf("Couldn't open file %s", filename);
 		return 1;
@@ -35,6 +35,7 @@ int main( void ) {
 		}
 		printf("[CHILD1] Number of letters: %d\n", letters);
 	} else {
+		printf("[PARENT] Child process ID: %d\n",child1);
 		child2 = fork();
 
 		if (child2 == 0) {
@@ -45,14 +46,13 @@ int main( void ) {
         	                	numbers++;
 	               		}
 				i++;
-			}		
+			}
 			printf("[CHILD2] Number of numbers: %d\n", numbers);
 		} else {
-			printf("[PARENT] Child process ID: %d\n",child1);
 			wait(&status);
 			printf("[PARENT] Child process ID: %d\n",child2);
 		}
 	}
 
-	return 0;	
+	return 0;
 }
