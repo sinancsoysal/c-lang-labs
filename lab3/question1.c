@@ -48,9 +48,9 @@ void minmax(char* filename, int limit) {
 	fclose(file);
 
 	qsort(array, sizeof(array)/sizeof(*array), sizeof(*array), comp);
-	
+
 	printf("Min: %d, Max: %d\n", array[0], array[limit-1]);
-}	
+}
 
 int main(int argc, char* argv[]) {
 	char* filename;
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 		printf("[CHILD1] Creating %s with %d integers...\n", filename, limit);
 		generate_file(filename, limit);
 	} else {
-		wait(&status);				
+		wait(&status);
 		printf("[PARENT] Creating second process...\n");
 		p2 = fork();
 
@@ -96,13 +96,12 @@ int main(int argc, char* argv[]) {
 			if(p3 == 0) {
 				// We are in the third process
 				// DONE find min max
-				
+
 				printf("[CHILD3] ");
 				minmax(filename, limit);
 			} else {
 				// We are in the parent process
-				
-				wait(&status);	
+				wait(&status);
 				printf("[PARENT] Done.\n");
 			}
 		}
