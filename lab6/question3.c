@@ -65,16 +65,23 @@ int main(int argc, char *argv[]) {
 
 	for(int i = 0; i < MAX_THREADS; i++) {
 		thread_idx[i] = i;
-		pthread_create(&thread_ids[i], NULL, compute_d, &thread_idx[i]);
+		if(pthread_create(&thread_ids[i], NULL, compute_d, &thread_idx[i]) != 0) {
+			perror("error in thread creation");
+                        exit(1);
+                }
 	}
 
 	// joining threads
 	for(int i = 0; i < MAX_THREADS; i++) {
-		pthread_join(thread_ids[i], (void *)&results[i]);
+		if(pthread_join(thread_ids[i], (void *)&results[i]) != 0) {
+			perror("error in thread join");
+                        exit(1);
+                }
 	}
 
 	// print results
 	for(int i = 0; i < MAX_THREADS; i++) {
 		printf("Thread %d - %d\n", i, *results[i]);
 	}
+	free(args);
 }

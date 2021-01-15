@@ -5,74 +5,94 @@
 
 #define MAX_THREADS 20
 
-int isDivisible(int num, int divider) {
-	if(num % divider == 0) return 1;
-	return 0;
-}
+int *size;
+int *numberOfLetters;
+int *freq;
+char *chars;
 
-void writeToFile(int *ints, char *filename) {
-	FILE *file = fopen(filename, "w");
-
-	for(int i = 0; i < sizeof(ints); i++) fprintf(file, "%d ", ints[i]);
-
-	fclose(file);
-}
-
-void* compute_d(void* params) {
-	int *args = (int *) params;
-	int ints[args[1]];
-	int *d_count = (int*)malloc(sizeof(int));
-	*d_count = 0;
+void* compute_f(void* params) {
+	int thread_idx = *((int*) params);
+//	int *freq = (int*) calloc(*numberOfLetters, sizeof(int));
 
 	// filename = "numbers<thread_id>.txt"
 	char filename[50];
-	sprintf(filename, "numbers%d.txt", (int)pthread_self());
+	sprintf(filename, "chars%d.txt", thread_idx);
 
 	FILE *file = fopen(filename, "w");
 
-	for(int i = 0; i < args[1]; i++) {
-		ints[i] = (rand() % (args[3] - (args[2] + 1))) + args[2];
-		if(isDivisible(ints[i], args[4])) (*d_count)++;
-		fprintf(file, "%d ", ints[i]);
+	for(int i = 0; i < *size; i++) {
+		char ch = (rand() % *numberOfLetters) + chars[0];
+		*(freq + (thread_idx * (*numberOfLetters)) + (ch - chars[0])) += 1;
+		fprintf(file, "%c ", ch);
 	}
 
 	fclose(file);
-	return d_count;
+	return (void*)freq;
 }
 
 int main(int argc, char *argv[]) {
 	// handling passed arguments
-	if(argc != 5) { printf("Unexpected numbers arguments.\nTerminating..\n"); exit(1); }
+	if(argc != 4) { printf("Unexpected numbers arguments.\nTerminating..\n"); exit(1); }
 
-	int args[argc];
+	size = (int*) malloc(sizeof(int));
+	numberOfLetters = (int*) malloc(sizeof(int));
+	chars = (char*) malloc(2 * sizeof(char));
 
-	for(int i = 1; i < argc; i++) args[i] = atoi(argv[i]);
+	for(int i = 1; i < argc; i++) {
+		if(i == 1) *size = atoi(argv[i]);
+		else chars[i - 2] = argv[i][0];
+	}
 
-	if(args[2] > args[3]) {
-		int temp = args[2];
-		args[2] = args[3];
-		args[3] = temp;
-	} else if (args[2] == args[3]) {
-		printf("I can't create integers between same numbers: %d == %d\nTerminating..", args[2], args[3]);
+	if(chars[0] > chars[1]) {
+		char temp = chars[0];
+		chars[0] = chars[1];
+		chars[1] = temp;
+	} else if(chars[0] == chars[1]) {
+		printf("I can't create chars between same chars: %c == %c\nTerminating..", chars[0], chars[1]);
 		exit(1);
 	}
 
+	*numberOfLetters = (chars[1] - chars[0]) + 1;
+	freq = (int *) calloc(*numberOfLetters * MAX_THREADS, sizeof(int));
+
+//	printf("size = %d, nol = %d, ch1 = %c, ch2 = %c\n", *size, *numberOfLetters, chars[0], chars[1]);
+
 	// setting up and starting threads
 	pthread_t thread_ids[MAX_THREADS];
-	int *results[MAX_THREADS];
+	int thread_idx[MAX_THREADS];
+//	int **results = calloc(MAX_THREADS * (*numberOfLetters), sizeof(int*));
+
+	// I couldn't figure out how to use 2d arrays in this operation
+	// I created a single array that contains all the freq data
 
 	for(int i = 0; i < MAX_THREADS; i++) {
-//		args[0] = i; beceremedik
-		pthread_create(&thread_ids[i], NULL, compute_d, &args);
+		thread_idx[i] = i;
+		if(pthread_create(&thread_ids[i], NULL, compute_f, &thread_idx[i]) != 0) {
+			perror("error in thread creation");
+			exit(1);
+		}
 	}
 
 	// joining threads
 	for(int i = 0; i < MAX_THREADS; i++) {
-		pthread_join(thread_ids[i], (void *)&results[i]);
+		if(pthread_join(thread_ids[i], NULL) != 0) {
+			perror("error in thread join");
+			exit(1);
+		}
 	}
+
 
 	// print results
 	for(int i = 0; i < MAX_THREADS; i++) {
-		printf("Thread %d - %d\n", i, *results[i]);
+		printf("Thread %d - ", i);
+		for(int j = 0; j < *numberOfLetters; j++) {
+			printf("%d ", *(freq + (*numberOfLetters * i) + j));
+		}
+		printf("\n");
 	}
+
+	free(size);
+	free(numberOfLetters);
+	free(freq);
+	free(chars);
 }
